@@ -10,7 +10,7 @@ function resultMeta(){ return {'io.modelcontextprotocol/serverInfo':SERVER_INFO}
 function ok(id:string|number, result:Record<string,unknown>){ return {jsonrpc:'2.0',id,result:{...result,_meta:resultMeta()}}; }
 function err(id:string|number|null, code:number,message:string,data?:unknown){ return {jsonrpc:'2.0',id,error:{code,message,...(data===undefined?{}:{data})}}; }
 
-export async function handleMcp(req:IncomingMessage,res:ServerResponse,body:any,store:JsonStore,guardrails:Guardrails){
+export async function handleMcp(req:IncomingMessage,res:ServerResponse,body:any,store:JsonStore,guardrails:Guardrails,_controlRoom?:unknown){
   if (req.method!=='POST') { res.writeHead(405).end(); return; }
   const version=req.headers['mcp-protocol-version'];
   const methodHeader=req.headers['mcp-method'];
