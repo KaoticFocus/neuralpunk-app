@@ -29,6 +29,9 @@ Environment variables are optional for local use. `.env.example` documents the b
 npm run dev        # Start the local server on port 8787 by default
 npm start          # Start the same server for a non-development run
 npm test           # Run the end-to-end Phase 1 smoke suite
+npm run typecheck  # Validate TypeScript without emitting build files
+npm run build      # Run every check used by Netlify Deploy Previews
+npm run test:netlify # Exercise the Netlify Function request adapter
 npm run test:server # Start a test server on port 8791
 ```
 
@@ -43,7 +46,7 @@ Machine entrances:
 
 `netlify.toml` publishes the existing static experience and routes the API, MCP, A2A, and Agent Card endpoints through `netlify/functions/server.ts`. The function adapts requests to the same `src/server.ts` handler used locally, so the Phase 1 protocol and canon boundaries stay in one implementation.
 
-Connect this repository in Netlify and use the configuration committed to the repository. Set `BASE_URL` to the public HTTPS origin after its domain is known. The current local JSON store is intentionally a development-only implementation; production persistence and authentication remain the next Phase 1 milestone before public write access.
+Connect this repository in Netlify and use the configuration committed to the repository. Netlify is pinned to Node.js 22.6 and runs `npm run build`, which includes the typecheck, smoke suite, and Control Room suite. Set `BASE_URL` to the public HTTPS origin after its domain is known. Keep `EXTERNAL_WRITES_ENABLED=false` unless the preview is intentionally being used for bounded write testing, and configure `CONTROL_ROOM_ADMIN_TOKEN` only in Netlify environment variables (never in the repository). The current local JSON store is intentionally a development-only implementation; production persistence and authentication remain the next Phase 1 milestone before public write access.
 
 ## Current limits
 

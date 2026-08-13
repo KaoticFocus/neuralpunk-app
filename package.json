@@ -7,9 +7,11 @@
   "scripts": {
     "dev": "node --experimental-strip-types src/server.ts",
     "start": "node --experimental-strip-types src/server.ts",
+    "build": "npm run typecheck && npm test && npm run test:control-room && npm run test:netlify",
     "test": "node tests/smoke.mjs",
     "test:control-room": "node tests/control-room.mjs",
-    "test:server": "PORT=8791 node --experimental-strip-types src/server.ts",
+    "test:netlify": "node tests/netlify-function.mjs",
+    "test:server": "cross-env PORT=8791 node --experimental-strip-types src/server.ts",
     "typecheck": "tsc --noEmit"
   },
   "engines": {
@@ -21,6 +23,7 @@
   },
   "devDependencies": {
     "@types/node": "^26.2.0",
+    "cross-env": "^10.0.0",
     "typescript": "^7.0.2"
   }
 }

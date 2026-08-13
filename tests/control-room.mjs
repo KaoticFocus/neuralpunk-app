@@ -1,14 +1,16 @@
 import { spawn } from 'node:child_process';
 import { rm } from 'node:fs/promises';
 import assert from 'node:assert/strict';
+import { fileURLToPath } from 'node:url';
 
 const port=8792;
 const base=`http://localhost:${port}`;
 const token='control-room-test-token';
-await rm(new URL('../data/control-room-test-store.json',import.meta.url),{force:true});
+const storePath=fileURLToPath(new URL('../data/control-room-test-store.json',import.meta.url));
+await rm(storePath,{force:true});
 const child=spawn(process.execPath,['--experimental-strip-types','src/server.ts'],{
   cwd:new URL('..',import.meta.url),
-  env:{...process.env,PORT:String(port),BASE_URL:base,STORE_PATH:new URL('../data/control-room-test-store.json',import.meta.url).pathname,CONTROL_ROOM_ADMIN_TOKEN:token},
+  env:{...process.env,PORT:String(port),BASE_URL:base,STORE_PATH:storePath,CONTROL_ROOM_ADMIN_TOKEN:token},
   stdio:['ignore','pipe','pipe']
 });
 let logs='';child.stdout.on('data',d=>logs+=d);child.stderr.on('data',d=>logs+=d);
