@@ -12,18 +12,19 @@ import { agentCard, agentCardEtag, handleA2aMessage } from './protocols/a2a.ts';
 
 const ROOT=fileURLToPath(new URL('..',import.meta.url));
 const PORT=Number(process.env.PORT??8787);
-const BASE_URL=process.env.BASE_URL??`http://localhost:${PORT}`;
+const BASE_URL=process.env.BASE_URL;
 const guardrails=new Guardrails();
 const store=new JsonStore(process.env.STORE_PATH??join(ROOT,'data','store.json'));
 await store.ensureSeed();
 const director=new SignalDirector(store,new MockIntelligenceProvider(),guardrails);
 
-const server=http.createServer(async (req,res)=>{
+export async function handleRequest(req:http.IncomingMessage,res:http.ServerResponse){
   try{
-    const url=new URL(req.url??'/',BASE_URL);
+    const baseUrl=BASE_URL ?? `${req.headers['x-forwarded-proto']??'http'}://${req.headers.host??`localhost:${PORT}`}`;
+    const url=new URL(req.url??'/',baseUrl);
     setSecurityHeaders(res);
     if(req.method==='GET' && url.pathname==='/.well-known/agent-card.json'){
-      const card=agentCard(BASE_URL), etag=agentCardEtag(card);
+      const card=agentCard(baseUrl), etag=agentCardEtag(card);
       if(req.headers['if-none-match']===etag){res.writeHead(304,{'etag':etag});res.end();return;}
       json(res,200,card,{'content-type':'application/a2a+json; charset=utf-8','cache-control':'public, max-age=300','etag':etag,'A2A-Version':'1.0'});return;
     }
@@ -46,8 +47,10 @@ const server=http.createServer(async (req,res)=>{
     }
     json(res,404,{error:'not found'});
   }catch(e:any){console.error(e);json(res,500,{error:'internal_error',message:e.message});}
-});
-server.listen(PORT,()=>console.log(`Neuralpunk Phase 1 listening on ${BASE_URL}`));
+}
+
+const server=http.createServer(handleRequest);
+if(process.argv[1]===fileURLToPath(import.meta.url)) server.listen(PORT,()=>console.log(`Neuralpunk Phase 1 listening on ${BASE_URL??`http://localhost:${PORT}`}`));
 
 async function readJson(req:http.IncomingMessage){let data='';for await(const chunk of req){data+=chunk;if(data.length>1_000_000)throw new Error('payload too large');}return data?JSON.parse(data):{};}
 async function serveStatic(res:http.ServerResponse,file:string){const path=join(ROOT,'public',file);const data=await readFile(path);const mime:Record<string,string>={'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.json':'application/json'};res.writeHead(200,{'content-type':mime[extname(path)]??'application/octet-stream'});res.end(data);}

@@ -8,7 +8,8 @@
     "dev": "node --experimental-strip-types src/server.ts",
     "start": "node --experimental-strip-types src/server.ts",
     "test": "node tests/smoke.mjs",
-    "test:server": "PORT=8791 node --experimental-strip-types src/server.ts"
+    "test:server": "PORT=8791 node --experimental-strip-types src/server.ts",
+    "typecheck": "tsc --noEmit"
   },
   "engines": {
     "node": ">=22.6"
@@ -16,5 +17,13 @@
   "optionalDependencies": {
     "@a2a-js/sdk": "^1.0.0",
     "@modelcontextprotocol/server": "^2.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.10.1",
+    "typescript": "^5.9.3"
+  },
+  "devDependencies": {
+    "@types/node": "^26.2.0",
+    "typescript": "^7.0.2"
   }
 }
