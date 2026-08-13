@@ -9,6 +9,9 @@ import { RESIDENTS } from './core/residents.ts';
 import { Guardrails } from './core/guardrails.ts';
 import { handleMcp } from './protocols/mcp.ts';
 import { agentCard, agentCardEtag, handleA2aMessage } from './protocols/a2a.ts';
+import { ControlRoomService } from './control-room/service.ts';
+import type { ActorControlAction } from './control-room/policy.ts';
+import type { KillSwitchName } from './control-room/types.ts';
 
 const ROOT=fileURLToPath(new URL('..',import.meta.url));
 const PORT=Number(process.env.PORT??8787);
@@ -16,6 +19,7 @@ const BASE_URL=process.env.BASE_URL;
 const guardrails=new Guardrails();
 const store=new JsonStore(process.env.STORE_PATH??join(ROOT,'data','store.json'));
 await store.ensureSeed();
+const controlRoom=new ControlRoomService(store);
 const director=new SignalDirector(store,new MockIntelligenceProvider(),guardrails);
 
 export async function handleRequest(req:http.IncomingMessage,res:http.ServerResponse){
@@ -23,24 +27,47 @@ export async function handleRequest(req:http.IncomingMessage,res:http.ServerResp
     const baseUrl=BASE_URL ?? `${req.headers['x-forwarded-proto']??'http'}://${req.headers.host??`localhost:${PORT}`}`;
     const url=new URL(req.url??'/',baseUrl);
     setSecurityHeaders(res);
+
     if(req.method==='GET' && url.pathname==='/.well-known/agent-card.json'){
       const card=agentCard(baseUrl), etag=agentCardEtag(card);
       if(req.headers['if-none-match']===etag){res.writeHead(304,{'etag':etag});res.end();return;}
       json(res,200,card,{'content-type':'application/a2a+json; charset=utf-8','cache-control':'public, max-age=300','etag':etag,'A2A-Version':'1.0'});return;
     }
-    if(req.method==='POST' && url.pathname==='/mcp'){ const body=await readJson(req); await handleMcp(req,res,body,store,guardrails); return; }
-    if(req.method==='POST' && url.pathname==='/message:send'){ const body=await readJson(req); await handleA2aMessage(req,res,body,store,guardrails); return; }
+    if(req.method==='POST' && url.pathname==='/mcp'){ const body=await readJson(req); await handleMcp(req,res,body,store,guardrails,controlRoom); return; }
+    if(req.method==='POST' && url.pathname==='/message:send'){ const body=await readJson(req); await handleA2aMessage(req,res,body,store,guardrails,controlRoom); return; }
+
+    if(url.pathname.startsWith('/api/control-room/')){
+      if(!controlRoom.isAdmin(req.headers)){json(res,401,{error:'unauthorized'});return;}
+      const adminId=String(req.headers['x-admin-id']??'admin');
+      if(req.method==='GET' && url.pathname==='/api/control-room/overview'){json(res,200,{overview:controlRoom.overview()});return;}
+      if(req.method==='GET' && url.pathname==='/api/control-room/actors'){json(res,200,{actors:controlRoom.actors()});return;}
+      if(req.method==='GET' && url.pathname==='/api/control-room/audit'){json(res,200,{events:controlRoom.audit()});return;}
+      if(req.method==='GET' && url.pathname==='/api/control-room/protocols'){json(res,200,{events:controlRoom.protocols()});return;}
+      if(req.method==='GET' && url.pathname==='/api/control-room/costs'){json(res,200,{events:controlRoom.costs()});return;}
+      if(req.method==='POST' && url.pathname==='/api/control-room/kill-switch'){
+        const b=await readJson(req);const result=await controlRoom.setKillSwitch(adminId,String(b.name) as KillSwitchName,Boolean(b.enabled),String(b.reason??'Control Room update'));json(res,200,{result});return;
+      }
+      if(req.method==='POST' && url.pathname==='/api/control-room/actor-control'){
+        const b=await readJson(req);const result=await controlRoom.setActorControl(adminId,String(b.actorId??''),String(b.action) as ActorControlAction,String(b.reason??'Control Room update'));json(res,200,{result});return;
+      }
+      json(res,404,{error:'control_room_endpoint_not_found'});return;
+    }
+
     if(req.method==='GET' && url.pathname==='/api/rooms/active'){json(res,200,{rooms:store.listRooms().filter(r=>r.active)});return;}
     if(req.method==='GET' && /^\/api\/rooms\/[^/]+$/.test(url.pathname)){ const id=url.pathname.split('/').at(-1)!; const room=store.getRoom(id); if(!room){json(res,404,{error:'not found'});return;} json(res,200,{room,messages:store.listMessages(id)});return; }
     if(req.method==='POST' && /^\/api\/rooms\/[^/]+\/messages$/.test(url.pathname)){
       const id=url.pathname.split('/')[3]; const b=await readJson(req); const content=String(b.content??'').trim(); if(!content){json(res,400,{error:'content required'});return;}
-      const gate=guardrails.checkWrite(String(b.humanId??'human-anonymous')); if(!gate.ok){json(res,gate.status,{error:gate.message});return;}
-      const human=await store.addMessage(id,String(b.humanId??'human-anonymous'),String(b.name??'HUMAN'),'human',content,[],true,'human');
+      const humanId=String(b.humanId??'human-anonymous');
+      if(!controlRoom.allowPublicWrite(humanId)){await controlRoom.recordProtocol('HTTP',humanId,'room-message',403);json(res,403,{error:'write access is currently restricted'});return;}
+      const gate=guardrails.checkWrite(humanId); if(!gate.ok){await controlRoom.recordProtocol('HTTP',humanId,'room-message',gate.status);json(res,gate.status,{error:gate.message});return;}
+      const human=await store.addMessage(id,humanId,String(b.name??'HUMAN'),'human',content,[],true,'human');
+      await controlRoom.recordProtocol('HTTP',humanId,'room-message',201);
       const reactions=await director.reactToHuman(id,content); json(res,201,{human,reactions});return;
     }
     if(req.method==='GET' && url.pathname==='/api/residents'){json(res,200,{residents:RESIDENTS});return;}
     if(req.method==='GET' && url.pathname==='/api/contributions'){json(res,200,{contributions:store.listContributions()});return;}
     if(req.method==='GET' && url.pathname==='/agents'){return serveStatic(res,'agents.html');}
+    if(req.method==='GET' && url.pathname==='/control-room'){return serveStatic(res,'control-room.html');}
     if(req.method==='GET'){
       const file=url.pathname==='/'?'index.html':url.pathname.slice(1);
       if(!file.includes('..')) { try{return await serveStatic(res,file);} catch{} }
