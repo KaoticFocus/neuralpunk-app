@@ -1,1 +1,0 @@
-Control Room scaffold branch initialized.
