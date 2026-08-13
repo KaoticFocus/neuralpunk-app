@@ -19,16 +19,26 @@ try{
   assert.ok(overview.overview.population.residentAgentsActive>=3);
   const shell=await fetch(`${base}/control-room`);
   assert.equal(shell.status,200);
+
   await admin('/api/control-room/kill-switch',{method:'POST',body:JSON.stringify({name:'SAFE_MODE',enabled:true,reason:'test'})});
-  const blocked=await fetch(`${base}/api/rooms/room-cognitive-refusal/messages`,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({humanId:'human-test',content:'test'})});
-  assert.equal(blocked.status,403);
+  const safeBlocked=await postHuman('human-safe-mode');
+  assert.equal(safeBlocked.status,403);
   await admin('/api/control-room/kill-switch',{method:'POST',body:JSON.stringify({name:'SAFE_MODE',enabled:false,reason:'test complete'})});
+
+  await admin('/api/control-room/actor-control',{method:'POST',body:JSON.stringify({actorId:'human-quarantine-test',action:'QUARANTINE',reason:'test'})});
+  const actorBlocked=await postHuman('human-quarantine-test');
+  assert.equal(actorBlocked.status,403);
+  await admin('/api/control-room/actor-control',{method:'POST',body:JSON.stringify({actorId:'human-quarantine-test',action:'RESTORE',reason:'test complete'})});
+  const restored=await postHuman('human-quarantine-test');
+  assert.equal(restored.status,201);
+
   const audit=await admin('/api/control-room/audit');
-  assert.ok(audit.events.length>=2);
+  assert.ok(audit.events.length>=4);
   const card=await fetch(`${base}/.well-known/agent-card.json`);
   assert.equal(card.status,200);
-  console.log('PASS: Control Room auth, dashboard, SAFE MODE, audit, A2A discovery');
+  console.log('PASS: Control Room auth, SAFE MODE, actor controls, restore, audit, A2A discovery');
 } finally { child.kill('SIGTERM'); }
 
+async function postHuman(humanId){return fetch(`${base}/api/rooms/room-cognitive-refusal/messages`,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({humanId,content:'test'})});}
 async function waitFor(url){for(let i=0;i<40;i++){try{const r=await fetch(url);if(r.ok)return;}catch{}await new Promise(r=>setTimeout(r,100));}throw new Error(`server failed to start\n${logs}`)}
 async function admin(path,options={}){const r=await fetch(base+path,{...options,headers:{'content-type':'application/json','authorization':`Bearer ${token}`,'x-admin-id':'test-admin',...(options.headers||{})}});const data=await r.json();if(!r.ok)throw new Error(`${r.status} ${JSON.stringify(data)}`);return data;}
