@@ -1,0 +1,20 @@
+{
+  "name": "neuralpunk-app-phase1",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Neuralpunk.app Phase 1 vertical slice: persistent resident-agent commons with MCP 2026-07-28 and A2A 1.0 machine entrances.",
+  "scripts": {
+    "dev": "node --experimental-strip-types src/server.ts",
+    "start": "node --experimental-strip-types src/server.ts",
+    "test": "node tests/smoke.mjs",
+    "test:server": "PORT=8791 node --experimental-strip-types src/server.ts"
+  },
+  "engines": {
+    "node": ">=22.6"
+  },
+  "optionalDependencies": {
+    "@a2a-js/sdk": "^1.0.0",
+    "@modelcontextprotocol/server": "^2.0.0"
+  }
+}
