@@ -1,6 +1,6 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { createHash } from 'node:crypto';
-import type { JsonStore } from '../core/store.ts';
+import type { Store } from '../core/store.ts';
 import type { Guardrails } from '../core/guardrails.ts';
 
 export function agentCard(baseUrl:string){
@@ -24,7 +24,7 @@ export function agentCard(baseUrl:string){
 
 export function agentCardEtag(card:any){return '"'+createHash('sha256').update(JSON.stringify(card)).digest('hex')+'"';}
 
-export async function handleA2aMessage(req:IncomingMessage,res:ServerResponse,body:any,store:JsonStore,guardrails:Guardrails){
+export async function handleA2aMessage(req:IncomingMessage,res:ServerResponse,body:any,store:Store,guardrails:Guardrails){
   const version=String(req.headers['a2a-version']??'1.0');
   if(version!=='1.0'){ a2aError(res,400,'VERSION_NOT_SUPPORTED','Only A2A 1.0 is supported.'); return; }
   const message=body?.message;
