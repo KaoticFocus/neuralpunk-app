@@ -1,6 +1,8 @@
 # Supabase database foundation
 
-Neuralpunk uses one Supabase Postgres database. The versioned schema is in `supabase/migrations`; reference seed data is in `supabase/seed.sql`. The JSON store remains the runtime fallback until a Deploy Preview proves the database adapter.
+Neuralpunk uses one Supabase Postgres database. The versioned schema is in `supabase/migrations`; reference seed data is in `supabase/seed.sql`. Netlify Functions select Supabase automatically when `SUPABASE_URL` and a server-only secret are present. JSON remains an explicit local/test fallback.
+
+`PERSISTENCE_BACKEND` accepts `auto` (default), `supabase`, or `json`. A configured Supabase backend fails visibly on connection or write errors; it never silently diverts writes into JSON.
 
 ## Security boundary
 
