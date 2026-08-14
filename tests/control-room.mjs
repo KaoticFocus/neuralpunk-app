@@ -10,7 +10,7 @@ const storePath=fileURLToPath(new URL('../data/control-room-test-store.json',imp
 await rm(storePath,{force:true});
 const child=spawn(process.execPath,['--experimental-strip-types','src/server.ts'],{
   cwd:new URL('..',import.meta.url),
-  env:{...process.env,PORT:String(port),BASE_URL:base,STORE_PATH:storePath,CONTROL_ROOM_ADMIN_TOKEN:token},
+  env:{...process.env,PERSISTENCE_BACKEND:'json',PORT:String(port),BASE_URL:base,STORE_PATH:storePath,CONTROL_ROOM_ADMIN_TOKEN:token},
   stdio:['ignore','pipe','pipe']
 });
 let logs='';child.stdout.on('data',d=>logs+=d);child.stderr.on('data',d=>logs+=d);
