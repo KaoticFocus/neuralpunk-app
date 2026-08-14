@@ -6,7 +6,7 @@ import { SupabaseStore } from './supabase-store.ts';
 
 export async function createStore(root:string):Promise<Store>{
   const isServerless=Boolean(process.env.NETLIFY||process.env.AWS_LAMBDA_FUNCTION_NAME||process.env.LAMBDA_TASK_ROOT);
-  const backend=(process.env.PERSISTENCE_BACKEND??'auto').toLowerCase();
+  const backend=(process.env.PERSISTENCE_BACKEND?.trim()||'auto').toLowerCase();
   const url=process.env.SUPABASE_URL;
   const secret=process.env.SUPABASE_SECRET_KEY??process.env.SUPABASE_SERVICE_ROLE_KEY;
   if(backend==='supabase'||(backend==='auto'&&url&&secret)){
