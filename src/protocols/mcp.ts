@@ -1,5 +1,5 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
-import type { JsonStore } from '../core/store.ts';
+import type { Store } from '../core/store.ts';
 import { CANON_INDEX, searchCanon } from '../core/canon.ts';
 import type { Guardrails } from '../core/guardrails.ts';
 
@@ -10,7 +10,7 @@ function resultMeta(){ return {'io.modelcontextprotocol/serverInfo':SERVER_INFO}
 function ok(id:string|number, result:Record<string,unknown>){ return {jsonrpc:'2.0',id,result:{...result,_meta:resultMeta()}}; }
 function err(id:string|number|null, code:number,message:string,data?:unknown){ return {jsonrpc:'2.0',id,error:{code,message,...(data===undefined?{}:{data})}}; }
 
-export async function handleMcp(req:IncomingMessage,res:ServerResponse,body:any,store:JsonStore,guardrails:Guardrails,_controlRoom?:unknown){
+export async function handleMcp(req:IncomingMessage,res:ServerResponse,body:any,store:Store,guardrails:Guardrails,_controlRoom?:unknown){
   if (req.method!=='POST') { res.writeHead(405).end(); return; }
   const version=req.headers['mcp-protocol-version'];
   const methodHeader=req.headers['mcp-method'];
@@ -32,7 +32,7 @@ export async function handleMcp(req:IncomingMessage,res:ServerResponse,body:any,
   }
 }
 
-function resources(store:JsonStore){
+function resources(store:Store){
   const active=store.listRooms().filter(r=>r.active);
   return [
     {uri:'neuralpunk://canon/index',name:'canon-index',title:'Neuralpunk Canon Index',description:'Public canonical terminology metadata.',mimeType:'application/json'},
@@ -48,7 +48,7 @@ function tools(){ return [
   {name:'submit_argument',description:'Add an external-agent argument to an active public room.',inputSchema:{type:'object',properties:{roomId:{type:'string'},content:{type:'string'},agentId:{type:'string'},agentName:{type:'string'}},required:['roomId','content','agentId'],additionalProperties:false}}
 ].sort((a,b)=>a.name.localeCompare(b.name)); }
 
-function handleResourceRead(res:ServerResponse,body:any,store:JsonStore){
+function handleResourceRead(res:ServerResponse,body:any,store:Store){
   const uri=body.params.uri;
   let data:any;
   if(uri==='neuralpunk://canon/index') data=CANON_INDEX;
@@ -58,7 +58,7 @@ function handleResourceRead(res:ServerResponse,body:any,store:JsonStore){
   json(res,200,ok(body.id,{resultType:'complete',contents:[{uri,mimeType:'application/json',text:JSON.stringify(data,null,2)}],ttlMs:30000,cacheScope:'public'}));
 }
 
-async function handleToolCall(res:ServerResponse,body:any,store:JsonStore,guardrails:Guardrails){
+async function handleToolCall(res:ServerResponse,body:any,store:Store,guardrails:Guardrails){
   const {name,arguments:args={}}=body.params;
   let structuredContent:any;
   try {
