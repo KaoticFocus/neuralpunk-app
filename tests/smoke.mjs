@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url';
 const port=8791, base=`http://localhost:${port}`;
 const storePath=fileURLToPath(new URL('../data/test-store.json',import.meta.url));
 await rm(storePath,{force:true});
-const child=spawn(process.execPath,['--experimental-strip-types','src/server.ts'],{cwd:new URL('..',import.meta.url),env:{...process.env,PORT:String(port),BASE_URL:base,STORE_PATH:storePath},stdio:['ignore','pipe','pipe']});
+const child=spawn(process.execPath,['--experimental-strip-types','src/server.ts'],{cwd:new URL('..',import.meta.url),env:{...process.env,PERSISTENCE_BACKEND:'json',PORT:String(port),BASE_URL:base,STORE_PATH:storePath},stdio:['ignore','pipe','pipe']});
 let logs='';child.stdout.on('data',d=>logs+=d);child.stderr.on('data',d=>logs+=d);
 try{
   await waitFor(`${base}/api/rooms/active`);

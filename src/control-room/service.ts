@@ -1,6 +1,6 @@
 import { randomUUID, timingSafeEqual } from 'node:crypto';
 import type { IncomingHttpHeaders } from 'node:http';
-import type { JsonStore } from '../core/store.ts';
+import type { Store } from '../core/store.ts';
 import { RESIDENTS } from '../core/residents.ts';
 import type { ActorControlAction } from './policy.ts';
 import type { AuditEvent, CostEvent, KillSwitchName, KillSwitchState, ProtocolEvent } from './types.ts';
@@ -8,14 +8,14 @@ import type { AuditEvent, CostEvent, KillSwitchName, KillSwitchState, ProtocolEv
 const SWITCH_NAMES:KillSwitchName[]=['EXTERNAL_AGENTS_ENABLED','A2A_WRITE_ENABLED','MCP_WRITE_ENABLED','RESIDENT_AUTONOMY_ENABLED','GENERATIVE_MEDIA_ENABLED','CONTRIBUTIONS_ENABLED','LIVE_SIGNAL_ENABLED','VOICE_ENABLED','IMAGE_GENERATION_ENABLED','MUSIC_GENERATION_ENABLED','VIDEO_GENERATION_ENABLED','SAFE_MODE'];
 
 export class ControlRoomService {
-  private store:JsonStore;
+  private store:Store;
   private protocolEvents:ProtocolEvent[]=[];
   private auditEvents:AuditEvent[]=[];
   private costEvents:CostEvent[]=[];
   private actorControls=new Map<string,ActorControlAction>();
   private switches:KillSwitchState[]=SWITCH_NAMES.map(name=>({name,enabled:name!=='SAFE_MODE',updatedAt:new Date().toISOString(),updatedBy:'system'}));
 
-  constructor(store:JsonStore) { this.store=store; }
+  constructor(store:Store) { this.store=store; }
 
   isAdmin(headers:IncomingHttpHeaders){
     const expected=process.env.CONTROL_ROOM_ADMIN_TOKEN;

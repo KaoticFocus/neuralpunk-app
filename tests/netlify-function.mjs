@@ -8,6 +8,7 @@ await rm(storePath,{force:true});
 delete process.env.STORE_PATH;
 delete process.env.NETLIFY;
 process.env.AWS_LAMBDA_FUNCTION_NAME='neuralpunk-preview-test';
+process.env.PERSISTENCE_BACKEND='json';
 
 const {default:handler}=await import('../netlify/functions/server.ts');
 
