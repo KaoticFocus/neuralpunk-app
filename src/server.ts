@@ -1,9 +1,8 @@
 import http from 'node:http';
 import { readFile } from 'node:fs/promises';
 import { extname, join } from 'node:path';
-import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
-import { JsonStore } from './core/store.ts';
+import { createStore } from './core/store-factory.ts';
 import { SignalDirector } from './core/signal-director.ts';
 import { MockIntelligenceProvider } from './adapters/mock-provider.ts';
 import { RESIDENTS } from './core/residents.ts';
@@ -18,10 +17,7 @@ const ROOT=fileURLToPath(new URL('..',import.meta.url));
 const PORT=Number(process.env.PORT??8787);
 const BASE_URL=process.env.BASE_URL;
 const guardrails=new Guardrails();
-const isServerless=Boolean(process.env.NETLIFY||process.env.AWS_LAMBDA_FUNCTION_NAME||process.env.LAMBDA_TASK_ROOT);
-const defaultStorePath=isServerless?join(tmpdir(),'neuralpunk-store.json'):join(ROOT,'data','store.json');
-const store=new JsonStore(process.env.STORE_PATH??defaultStorePath);
-await store.ensureSeed();
+const store=await createStore(ROOT);
 const controlRoom=new ControlRoomService(store);
 const director=new SignalDirector(store,new MockIntelligenceProvider(),guardrails);
 
@@ -30,6 +26,8 @@ export async function handleRequest(req:http.IncomingMessage,res:http.ServerResp
     const baseUrl=BASE_URL ?? `${req.headers['x-forwarded-proto']??'http'}://${req.headers.host??`localhost:${PORT}`}`;
     const url=new URL(req.url??'/',baseUrl);
     setSecurityHeaders(res);
+
+    if(req.method==='GET' && url.pathname==='/api/health/persistence'){json(res,200,{status:'ok',backend:store.kind});return;}
 
     if(req.method==='GET' && url.pathname==='/.well-known/agent-card.json'){
       const card=agentCard(baseUrl), etag=agentCardEtag(card);
