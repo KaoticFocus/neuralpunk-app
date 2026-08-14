@@ -1,13 +1,13 @@
 import { RESIDENTS } from './residents.ts';
-import type { JsonStore } from './store.ts';
+import type { Store } from './store.ts';
 import type { IntelligenceProvider } from '../adapters/provider.ts';
 import type { Guardrails } from './guardrails.ts';
 
 export class SignalDirector {
-  private store: JsonStore;
+  private store: Store;
   private provider: IntelligenceProvider;
   private guardrails: Guardrails;
-  constructor(store:JsonStore, provider:IntelligenceProvider, guardrails:Guardrails) { this.store=store; this.provider=provider; this.guardrails=guardrails; }
+  constructor(store:Store, provider:IntelligenceProvider, guardrails:Guardrails) { this.store=store; this.provider=provider; this.guardrails=guardrails; }
 
   async reactToHuman(roomId:string, humanText:string) {
     const room = this.store.getRoom(roomId);
