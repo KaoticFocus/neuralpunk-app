@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <title>THE CONTROL ROOM // Neuralpunk.app</title>
+  <style>
+    body{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;background:#090b0d;color:#e8ecef;margin:0}
+    main{max-width:1200px;margin:auto;padding:32px}h1{letter-spacing:.08em}
+    section{border:1px solid #2b3035;padding:18px;margin:16px 0;background:#101419}
+    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}.card{border:1px solid #30363d;padding:14px}
+    .value{font-size:2rem}.muted{color:#9aa4ad}.hidden{display:none}
+    button,input{background:#0b0f13;color:#e8ecef;border:1px solid #3a424a;padding:9px;margin:4px}button{cursor:pointer}
+    pre{white-space:pre-wrap;max-height:360px;overflow:auto}
+  </style>
+</head>
+<body>
+<main>
+  <h1>THE CONTROL ROOM</h1>
+  <p class="muted">Operations // Safety // Agent Governance</p>
+  <section id="login">
+    <h2>ADMIN AUTHORIZATION</h2>
+    <input id="token" type="password" autocomplete="current-password" placeholder="Control Room token">
+    <button id="connect">CONNECT</button>
+    <p id="auth-status"></p>
+  </section>
+  <div id="dashboard" class="hidden">
+    <section><h2>LIVE OVERVIEW</h2><div id="metrics" class="grid"></div></section>
+    <section><h2>GLOBAL CONTROLS</h2><div id="switches" class="grid"></div></section>
+    <section><h2>ACTORS</h2><pre id="actors"></pre></section>
+    <section><h2>AUDIT</h2><pre id="audit"></pre></section>
+  </div>
+</main>
+<script src="/control-room.js"></script>
+</body>
+</html>
