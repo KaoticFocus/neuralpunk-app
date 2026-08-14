@@ -2,7 +2,7 @@ import http from 'node:http';
 import { readFile } from 'node:fs/promises';
 import { extname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { createStore } from './core/store-factory.ts';
+import { createStore, persistenceEnvironmentStatus } from './core/store-factory.ts';
 import { SignalDirector } from './core/signal-director.ts';
 import { MockIntelligenceProvider } from './adapters/mock-provider.ts';
 import { RESIDENTS } from './core/residents.ts';
@@ -27,7 +27,7 @@ export async function handleRequest(req:http.IncomingMessage,res:http.ServerResp
     const url=new URL(req.url??'/',baseUrl);
     setSecurityHeaders(res);
 
-    if(req.method==='GET' && url.pathname==='/api/health/persistence'){json(res,200,{status:'ok',backend:store.kind});return;}
+    if(req.method==='GET' && url.pathname==='/api/health/persistence'){json(res,200,{status:'ok',backend:store.kind,environment:persistenceEnvironmentStatus()});return;}
 
     if(req.method==='GET' && url.pathname==='/.well-known/agent-card.json'){
       const card=agentCard(baseUrl), etag=agentCardEtag(card);
