@@ -1,6 +1,7 @@
 import http from 'node:http';
 import { readFile } from 'node:fs/promises';
 import { extname, join } from 'node:path';
+import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
 import { JsonStore } from './core/store.ts';
 import { SignalDirector } from './core/signal-director.ts';
@@ -17,7 +18,8 @@ const ROOT=fileURLToPath(new URL('..',import.meta.url));
 const PORT=Number(process.env.PORT??8787);
 const BASE_URL=process.env.BASE_URL;
 const guardrails=new Guardrails();
-const store=new JsonStore(process.env.STORE_PATH??join(ROOT,'data','store.json'));
+const defaultStorePath=process.env.NETLIFY==='true'?join(tmpdir(),'neuralpunk-store.json'):join(ROOT,'data','store.json');
+const store=new JsonStore(process.env.STORE_PATH??defaultStorePath);
 await store.ensureSeed();
 const controlRoom=new ControlRoomService(store);
 const director=new SignalDirector(store,new MockIntelligenceProvider(),guardrails);

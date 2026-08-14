@@ -1,10 +1,12 @@
 import assert from 'node:assert/strict';
 import { rm } from 'node:fs/promises';
-import { fileURLToPath } from 'node:url';
+import { join } from 'node:path';
+import { tmpdir } from 'node:os';
 
-const storePath=fileURLToPath(new URL('../data/netlify-function-test-store.json',import.meta.url));
+const storePath=join(tmpdir(),'neuralpunk-store.json');
 await rm(storePath,{force:true});
-process.env.STORE_PATH=storePath;
+delete process.env.STORE_PATH;
+process.env.NETLIFY='true';
 
 const {default:handler}=await import('../netlify/functions/server.ts');
 
@@ -20,3 +22,4 @@ const rooms=await roomsResponse.json();
 assert.ok(rooms.rooms.some(room=>room.active));
 
 console.log('PASS: Netlify Function adapter routes API and A2A discovery with the preview origin');
+await rm(storePath,{force:true});
