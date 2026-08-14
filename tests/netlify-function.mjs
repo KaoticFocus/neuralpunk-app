@@ -6,7 +6,8 @@ import { tmpdir } from 'node:os';
 const storePath=join(tmpdir(),'neuralpunk-store.json');
 await rm(storePath,{force:true});
 delete process.env.STORE_PATH;
-process.env.NETLIFY='true';
+delete process.env.NETLIFY;
+process.env.AWS_LAMBDA_FUNCTION_NAME='neuralpunk-preview-test';
 
 const {default:handler}=await import('../netlify/functions/server.ts');
 
