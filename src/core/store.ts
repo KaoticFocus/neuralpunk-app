@@ -3,7 +3,7 @@ import { dirname } from 'node:path';
 import { randomUUID } from 'node:crypto';
 import type { Contribution, DebateMessage, DebateRoom, OriginType, ProvenanceRecord } from './types.ts';
 
-interface StoreShape {
+export interface StoreShape {
   rooms: DebateRoom[];
   messages: DebateMessage[];
   contributions: Contribution[];
@@ -11,9 +11,25 @@ interface StoreShape {
   externalAgents: Array<{id:string; name:string; firstSeen:string; lastSeen:string; verified:boolean}>;
 }
 
+export interface Store {
+  readonly kind: 'json' | 'supabase';
+  load(): Promise<void>;
+  ensureSeed(): Promise<void>;
+  listRooms(): DebateRoom[];
+  getRoom(id:string): DebateRoom | undefined;
+  listMessages(roomId:string): DebateMessage[];
+  listContributions(): Contribution[];
+  getContribution(id:string): Contribution | undefined;
+  addMessage(roomId:string, participantId:string, participantName:string, participantType:DebateMessage['participantType'], content:string, citations?:string[], interpretation?:boolean, originType?:OriginType): Promise<DebateMessage>;
+  addProvenance(originType:OriginType, originId:string, verifiedIdentity:boolean, transformations:string[], sourceModel?:string): Promise<ProvenanceRecord>;
+  registerExternalAgent(id:string, name:string, verified?:boolean): Promise<{id:string; name:string; firstSeen:string; lastSeen:string; verified:boolean}>;
+  addContribution(input:{title:string; body:string; originType:OriginType; originId:string; sourceModel?:string}): Promise<Contribution>;
+}
+
 const initial: StoreShape = { rooms: [], messages: [], contributions: [], provenance: [], externalAgents: [] };
 
 export class JsonStore {
+  readonly kind = 'json' as const;
   private data: StoreShape = structuredClone(initial);
   private loaded = false;
   private path: string;
